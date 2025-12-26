@@ -1,34 +1,36 @@
 import express from 'express';
-import cors from "cors"
-// note route 
+import path from 'path';
+import cors from 'cors';
 import noteRoutes from './routes/noteRoutes.js';
-// connection with database 
 import connectDB from './config/db.js';
-// configration to env file 
-import dotenv from "dotenv"
-dotenv.config()
+import dotenv from 'dotenv';
+dotenv.config();
 
-// connectioon & run the server
-connectDB().then(()=>{
-  app.listen(PORT, () => {
-    console.log(`the server run in port ${PORT}`);
-  });
-
-})
-
-// the app server 
 const app = express();
+const __dirname = path.resolve();
+const PORT = process.env.PORT || 5001;
 
-// middleware 
-app.use(express.json())
-app.use(cors({
-  origin: "http://localhost:5173",
+// Middleware
+app.use(express.json());
+if (process.env.NODE_ENV !== 'production') {
+  app.use(cors({ origin: 'http://localhost:5173' }));
+}
 
-}))
-
-
-// notes
+// Notes API
 app.use('/api/note', noteRoutes);
 
-const PORT = process.env.PORT || 5001
+// Production settings
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../front-end/dist")));
 
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../front-end", "dist", "index.html"));
+  });
+}
+
+// Connect to DB and start server
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+});
